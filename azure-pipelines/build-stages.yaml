@@ -1,0 +1,25 @@
+parameters:
+  - name: vmImage
+    default: 'ubuntu-latest'
+
+
+pool:
+  vmImage: ${{parameters.vmImage}}
+stages:
+  - stage: BuildandTest
+    jobs:
+      - job:
+        displayName: Build Maven Project
+        steps:
+          - task: Maven@3
+            displayName: 'Maven Package'
+            inputs:
+              mavenPomFile: 'pom.xml'
+          - task: CopyFiles@2
+            displayName: 'Copy Files to artifact staging directory'
+            inputs:
+              SourceFolder: '$(System.DefaultWorkingDirectory)'
+              Contents: '**/target/*.?(war|jar)'
+              TargetFolder: $(Build.ArtifactStagingDirectory)
+          - upload: $(Build.ArtifactStagingDirectory)
+            artifact: drop

@@ -1,0 +1,28 @@
+parameters:
+  - name: envName
+    default: development
+
+
+stages:
+  - stage: DevDeployment
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: VMDeploy
+        environment:
+          name: ${{parameters.envName}}
+          resourceType: VirtualMachine
+        strategy:
+          runOnce:
+            preDeploy:
+              steps:
+                - download: current
+                  artifact: drop
+                - script: |
+                    systemctl stop tomcat
+                    cd /opt/tomcat/apache-tomcat-9.0.34/webapps/
+                    find -type f -name '*azurepipelines*' -delete
+            deploy:
+              steps:
+                - script: |
+                    cp /home/azagent/_work/1/drop/target/java-springboot-azurepipelines-0.0.1-SNAPSHOT.war /opt/tomcat/apache-tomcat-9.0.34/webapps/
+                    systemctl start tomcat
